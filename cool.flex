@@ -11,6 +11,15 @@
 #include <cool-parse.h>
 #include <stringtab.h>
 #include <utilities.h>
+#include <string.h>
+
+void append(char* s, char c)
+{
+        int len = strlen(s);
+        s[len] = c;
+        s[len+1] = '\0';
+}
+
 
 /* The compiler assumes these identifiers. */
 #define yylval cool_yylval
@@ -53,10 +62,14 @@ int comment_depth;
  */
 
 DARROW          =>
+%Start COMMENT
+%X STRING
 
 %%
 
-[ \t\n]					        ;
+[ \t]					        ;
+\n	++curr_lineno; printf("Line: %i\n", curr_lineno);
+
 [0-9]+	{
 	printf("\n+++ INT_CONST: %d\n", atoi(yytext));
 	yylval.symbol = inttable.add_string(yytext);
@@ -69,14 +82,17 @@ DARROW          =>
  /*
   *  Nested comments
   */
-
+"(*"	{ BEGIN(COMMENT); comment_depth++; }
+<COMMENT>"*)"	{
+		comment_depth--;
+		if (comment_depth == 0) BEGIN(0);
+	}
+<COMMENT>.	;
 
  /*
   *  The multiple-character operators.
   */
 {DARROW}		{ return (DARROW); }
-\"[^\"]*\"		{ return (STR_CONST); }
-
  /*
   * Keywords are case-insensitive except for the values true and false,
   * which must begin with a lower-case letter.
@@ -89,6 +105,29 @@ DARROW          =>
   *  \n \t \b \f, the result is c.
   *
   */
+
+\"			{ BEGIN(STRING); strcpy(string_buf,""); }
+<STRING>[^\\\"]*	{
+				strcat(string_buf, yytext);
+				// TODO: lengh testing
+			}
+
+<STRING>\\.		{
+				switch (yytext[1])
+				{
+					case 'b': append(string_buf, '\b'); break;
+					case 't': append(string_buf, '\t'); break;
+					case 'n': append(string_buf, '\n'); break;
+					case 'f': append(string_buf, '\f'); break;
+					default: append(string_buf, yytext[1]);
+				}
+			}
+<STRING>\\$		curr_lineno++;
+<STRING>\"		{
+				BEGIN(INITIAL);
+				yylval.symbol = inttable.add_string(string_buf);
+				return (STR_CONST);
+			}
 
 
 .                       printf("Unknown token!\n\"%s\"\n", yytext); //yyterminate();
