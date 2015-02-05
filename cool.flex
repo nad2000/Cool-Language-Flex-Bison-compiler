@@ -66,12 +66,12 @@ DARROW          =>
 %X STRING
 
 %%
-
-[ \t]					        ;
-\n	++curr_lineno; printf("Line: %i\n", curr_lineno);
+ /* Skip delimiters  */
+[ \t\f\r\v]					        ;
+ /* Count lines */
+\n	++curr_lineno; // printf("Line: %i\n", curr_lineno);
 
 [0-9]+	{
-	printf("\n+++ INT_CONST: %d\n", atoi(yytext));
 	yylval.symbol = inttable.add_string(yytext);
 	return (INT_CONST);
 }
@@ -85,7 +85,7 @@ DARROW          =>
 "(*"	{ BEGIN(COMMENT); comment_depth++; }
 <COMMENT>"*)"	{
 		comment_depth--;
-		if (comment_depth == 0) BEGIN(0);
+		if (comment_depth == 0) BEGIN(INITIAL);
 	}
 <COMMENT>.	;
 
@@ -98,6 +98,29 @@ DARROW          =>
   * which must begin with a lower-case letter.
   */
 
+(?i:class)		return (CLASS);
+(?i:else)		return (ELSE);
+(?i:fi)			return (FI);
+(?i:if)			return (IF);
+(?i:in)			return (IN);
+(?i:inherits)		return (INHERITS);
+(?i:isvoid)		return (ISVOID);
+(?i:let)		return (LET);
+(?i:loop)		return (LOOP);
+(?i:pool)		return (POOL);
+(?i:then)		return (THEN);
+(?i:while)		return (WHILE);
+(?i:case)		return (CASE);
+(?i:esac)		return (ESAC);
+(?i:of)			return (OF);
+(?i:new)		return (NEW);
+(?i:not)		return (NOT);
+true|false		{ yylval.symbol = inttable.add_string(yytext); return (BOOL_CONST); }
+
+=			return (ASSIGN);
+
+[a-z][a-zA-Z0-9_]*	{ yylval.symbol = inttable.add_string(yytext); return (OBJECTID); }
+[A-Z][a-zA-Z0-9_]*	{ yylval.symbol = inttable.add_string(yytext); return (TYPEID); }
 
  /*
   *  String constants (C syntax)
