@@ -15,3 +15,7 @@ AND NOW SOMETHING COMPLETELY DIFFERENT! ..."
 
 "123ABC"
 
+
+"this is unterminated string
+
+

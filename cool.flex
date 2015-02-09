@@ -55,12 +55,11 @@ extern int verbose_flag;
 
 extern YYSTYPE cool_yylval;
 
-int comment_depth;
-char err_message[160];
-
 /*
  *  Add Your own definitions here
  */
+int comment_depth;
+char err_message[160];
 
 %}
 
@@ -114,7 +113,7 @@ DARROW          =>
 (?i:fi)         return (FI);
 (?i:if)         return (IF);
 (?i:in)         return (IN);
-(?i:inherits)       return (INHERITS);
+(?i:inherits)   return (INHERITS);
 (?i:isvoid)     return (ISVOID);
 (?i:let)        return (LET);
 (?i:loop)       return (LOOP);
@@ -127,8 +126,7 @@ DARROW          =>
 (?i:new)        return (NEW);
 (?i:not)        return (NOT);
 true|false      { yylval.symbol = inttable.add_string(yytext); return (BOOL_CONST); }
-
-=           return (ASSIGN);
+=               return (ASSIGN);
 
 [a-z][a-zA-Z0-9_]*  { yylval.symbol = inttable.add_string(yytext); return (OBJECTID); }
 [A-Z][a-zA-Z0-9_]*  { yylval.symbol = inttable.add_string(yytext); return (TYPEID); }
@@ -162,8 +160,13 @@ true|false      { yylval.symbol = inttable.add_string(yytext); return (BOOL_CONS
                 yylval.symbol = inttable.add_string(string_buf);
                 return (STR_CONST);
             }
+ /* TODO: */
+<STRING>[^\\\"]$    {
+        BEGIN(INITIAL);
+        cool_yylval.error_msg = "Unterminated string constant";
+        return (ERROR);
+    }
 
-"*)"
 
 .   {
         COOL_SET_ERRMSG( "Invalid character: %s", yytext);
